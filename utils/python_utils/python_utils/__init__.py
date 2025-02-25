@@ -4,7 +4,7 @@
 python_utils
 ~~~~~~~~~~
 
-Python utils package for the GitHup repository magneto_liquid_metal_dynamics_and_control.
+Python utils package.
 """
 __title__ = 'python_utils'
 __version__ = '0.0.1'

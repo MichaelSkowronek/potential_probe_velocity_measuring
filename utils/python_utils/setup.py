@@ -14,10 +14,10 @@ setup(
     author_email='michael.skowronek.91@gmail.com',
     maintainer='Michael Skowronek',
     maintainer_email='michael.skowronek.91@gmail.com',
-    description="Python utils package for the GitHup repository magneto_liquid_metal_dynamics_and_control.",
-    long_description="Python utils package for the GitHup repository magneto_liquid_metal_dynamics_and_control.",
+    description="Python utils package.",
+    long_description="Python utils package.",
     install_requires=requirements,
-    python_requires=">=3.13",
+    python_requires=">=3.12",
     packages=find_packages(
         where='.',
         include=[
