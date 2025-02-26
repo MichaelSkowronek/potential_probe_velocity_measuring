@@ -18,15 +18,7 @@ setup(
     long_description="Python utils package.",
     install_requires=requirements,
     python_requires=">=3.12",
-    packages=find_packages(
-        where='.',
-        include=[
-            'python_utils',
-            # e.g. 'python_utils.example',
-        ],
-        exclude=[
-            'python_utils.tests',
-            'python_utils.example',
-        ],
-    ),
+    package_dir = {
+        'python_utils': 'src/python_utils',
+    }
 )

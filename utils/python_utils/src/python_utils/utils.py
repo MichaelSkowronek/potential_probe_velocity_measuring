@@ -6,6 +6,22 @@
 import pickle
 
 
+def save_object(obj, file_path):
+    """
+    Save a Python object to a file.
+    
+    :param obj: The Python object to save
+    :param file_path: The path of the file where the object will be stored
+    """
+    try:
+        with open(file_path, 'wb') as file:
+            pickle.dump(obj, file)
+        print(f"Object successfully saved to {file_path}")
+    except Exception as e:
+        print(f"An error occurred while saving the object: {e}")
+        
+
+
 def load_object(file_path):
     """
     Load a Python object from a file.
