@@ -37,3 +37,27 @@ def load_object(file_path):
     except Exception as e:
         print(f"An error occurred while loading the object: {e}")
         return None
+
+
+def truncate_file_at_line(filepath, line_number):
+    """
+    Truncates a file at the specified line number.
+
+    Args:
+        filepath (str): The path to the file.
+        line_number (int): The line number at which to truncate the file.
+    """
+    try:
+        with open(filepath, 'r+') as f:  # Open for reading and writing
+            lines = f.readlines()
+            if line_number > 0 and line_number <= len(lines):
+                f.seek(0) # go to the beginning of the file
+                f.writelines(lines[:line_number]) # write the first line_number lines
+                f.truncate() # remove the rest of the file.
+            else:
+                print(f"Error: Line number {line_number} is out of range.")
+
+    except FileNotFoundError:
+        print(f"Error: File not found at {filepath}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
