@@ -4,47 +4,52 @@
 
 
 import re
-import pandas as pd
+import numpy as np
 
+import re
+import numpy as np
 
-def parse_tecplot_slice_to_dataframes_timeseries(file_path):
-    # Initialize variables to store parsed data
-    data_frames = []
-    current_snapshot = []
-    headers = []
-
-    # Regular expressions to detect headers
+def parse_tecplot_slice_to_numpy_timeseries(file_path, *, dtype=float):
+    """
+    Parses a Tecplot slice file and returns a list of NumPy arrays,
+    where each array represents a snapshot in the timeseries.
+    """
+    # Precompile regex patterns
     re_title = re.compile(r'title')
     re_variables = re.compile(r'variables')
     re_zone = re.compile(r'zone')
 
-    # Read the file line by line
+    data_arrays = []
+    current_snapshot = []
+    headers = []
+    found_headers = False
+
     with open(file_path, "r") as file:
         for line in file:
-            line = line.strip()  # Remove leading/trailing whitespace
+            line = line.strip()
 
             if not line:  # Skip empty lines
                 continue
 
-            if re_title.match(line):
-                if current_snapshot:  # If there's existing data, store it
-                    df = pd.DataFrame(current_snapshot, columns=headers)
-                    data_frames.append(df)
-                    current_snapshot.clear()  # Clear for the next snapshot
-            
-            elif re_variables.match(line):
-                headers = re.findall(r'"(.*?)"', line)
-            
-            elif not re_zone.match(line):  # Ignore 'zone' lines
+            if re_title.match(line):  # New snapshot starts here
+                if current_snapshot:  # Save previous snapshot if it exists
+                    data_arrays.append(np.array(current_snapshot, dtype=dtype))
+                    current_snapshot = []  # Reset for next snapshot
+
+            elif re_variables.match(line):  # Extract headers only once
+                if found_headers is not True:
+                    found_headers = True
+                    headers = re.findall(r'"(.*?)"', line)
+
+            elif not re_zone.match(line):  # Process data lines
                 try:
-                    values = list(map(float, line.split()))
-                    current_snapshot.append(values)  # Append float values to the snapshot
+                    values = [dtype(v) for v in line.split()]  # Faster parsing than np.fromstring
+                    current_snapshot.append(values)
                 except ValueError:
                     print(f"Warning: Could not convert line to float values: {line}")
 
-    # Append the last snapshot if there is one
-    if current_snapshot:
-        df = pd.DataFrame(current_snapshot, columns=headers)
-        data_frames.append(df)
+        # Append the last snapshot after reading all lines
+        if current_snapshot:
+            data_arrays.append(np.array(current_snapshot, dtype=dtype))
 
-    return data_frames
+    return data_arrays, headers

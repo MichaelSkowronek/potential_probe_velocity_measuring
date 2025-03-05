@@ -3,6 +3,7 @@
 """
 
 
+import os
 import pickle
 
 
@@ -16,11 +17,12 @@ def save_object(obj, file_path):
     try:
         with open(file_path, 'wb') as file:
             pickle.dump(obj, file)
-        print(f"Object successfully saved to {file_path}")
+        # Get the absolute path and print it
+        complete_file_path = os.path.abspath(file_path)
+        print(f"Object successfully saved to {complete_file_path}")
     except Exception as e:
         print(f"An error occurred while saving the object: {e}")
         
-
 
 def load_object(file_path):
     """
@@ -32,7 +34,9 @@ def load_object(file_path):
     try:
         with open(file_path, 'rb') as file:
             obj = pickle.load(file)
-        print(f"Object successfully loaded from {file_path}")
+        # Get the absolute path and print it
+        complete_file_path = os.path.abspath(file_path)
+        print(f"Object successfully loaded from {complete_file_path}")
         return obj
     except Exception as e:
         print(f"An error occurred while loading the object: {e}")
