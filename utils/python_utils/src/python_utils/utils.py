@@ -5,23 +5,27 @@
 
 import os
 import pickle
-
+from pathlib import Path
 
 def save_object(obj, file_path):
     """
-    Save a Python object to a file.
+    Save a Python object to a file, creating parent directories if necessary.
     
     :param obj: The Python object to save
-    :param file_path: The path of the file where the object will be stored
+    :param file_path: The path of the file where the object will be stored (can be a string or Path)
     """
-    try:
-        with open(file_path, 'wb') as file:
-            pickle.dump(obj, file)
-        # Get the absolute path and print it
-        complete_file_path = os.path.abspath(file_path)
-        print(f"Object successfully saved to {complete_file_path}")
-    except Exception as e:
-        print(f"An error occurred while saving the object: {e}")
+    # Convert file_path to a Path object if it's not already one
+    file_path = Path(file_path)
+
+    # Ensure parent directories exist
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Save the object using pickle
+    with file_path.open('wb') as file:
+        pickle.dump(obj, file)
+
+    # Print the absolute path of the saved object
+    print(f"Object successfully saved to {file_path.resolve()}")
         
 
 def load_object(file_path):
