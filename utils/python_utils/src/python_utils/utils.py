@@ -3,9 +3,9 @@
 """
 
 
-import os
 import pickle
 from pathlib import Path
+
 
 def save_object(obj, file_path):
     """
@@ -14,7 +14,6 @@ def save_object(obj, file_path):
     :param obj: The Python object to save
     :param file_path: The path of the file where the object will be stored (can be a string or Path)
     """
-    # Convert file_path to a Path object if it's not already one
     file_path = Path(file_path)
 
     # Ensure parent directories exist
@@ -23,9 +22,7 @@ def save_object(obj, file_path):
     # Save the object using pickle
     with file_path.open('wb') as file:
         pickle.dump(obj, file)
-
-    # Print the absolute path of the saved object
-    print(f"Object successfully saved to {file_path.resolve()}")
+    print(f"Object successfully saved to {file_path.resolve(strict=True)}")
         
 
 def load_object(file_path):
@@ -35,12 +32,11 @@ def load_object(file_path):
     :param file_path: The path of the file where the object is stored
     :return: The loaded Python object
     """
+    file_path = Path(file_path)
     try:
-        with open(file_path, 'rb') as file:
+        with file_path.open('rb') as file:
             obj = pickle.load(file)
-        # Get the absolute path and print it
-        complete_file_path = os.path.abspath(file_path)
-        print(f"Object successfully loaded from {complete_file_path}")
+        print(f"Object successfully loaded from {file_path.resolve(strict=True)}")
         return obj
     except Exception as e:
         print(f"An error occurred while loading the object: {e}")
@@ -55,8 +51,9 @@ def truncate_file_at_line(filepath, line_number):
         filepath (str): The path to the file.
         line_number (int): The line number at which to truncate the file.
     """
+    filepath = Path(filepath)
     try:
-        with open(filepath, 'r+') as f:  # Open for reading and writing
+        with filepath.open('r+') as f:
             lines = f.readlines()
             if line_number > 0 and line_number <= len(lines):
                 f.seek(0) # go to the beginning of the file
@@ -66,6 +63,6 @@ def truncate_file_at_line(filepath, line_number):
                 print(f"Error: Line number {line_number} is out of range.")
 
     except FileNotFoundError:
-        print(f"Error: File not found at {filepath}")
+        print(f"Error: File not found at {filepath.resolve(strict=True)}")
     except Exception as e:
         print(f"An error occurred: {e}")

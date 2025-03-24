@@ -5,15 +5,16 @@
 
 import re
 import numpy as np
+from pathlib import Path
 
-import re
-import numpy as np
 
 def parse_tecplot_slice_to_numpy_timeseries(file_path, *, dtype=float):
     """
     Parses a Tecplot slice file and returns a list of NumPy arrays,
     where each array represents a snapshot in the timeseries.
     """
+    file_path = Path(file_path)
+
     # Precompile regex patterns
     re_title = re.compile(r'title')
     re_variables = re.compile(r'variables')
@@ -24,7 +25,7 @@ def parse_tecplot_slice_to_numpy_timeseries(file_path, *, dtype=float):
     headers = []
     found_headers = False
 
-    with open(file_path, "r") as file:
+    with file_path.open('r') as file:
         for line in file:
             line = line.strip()
 
@@ -51,5 +52,36 @@ def parse_tecplot_slice_to_numpy_timeseries(file_path, *, dtype=float):
         # Append the last snapshot after reading all lines
         if current_snapshot:
             data_arrays.append(np.array(current_snapshot, dtype=dtype))
-
+    print(f"Data parsed from path: {file_path.resolve(strict=True)}")
     return data_arrays, headers
+
+
+def print_loaded_data_example(data):
+    """
+    Prints information about the loaded timeseries data.
+
+    Parameters:
+    data (dict): A dictionary containing 'timeseries' and 'labels'.
+                 'timeseries' should be a list or array of snapshots,
+                 and 'labels' should be a list of corresponding labels.
+
+    The function prints:
+    - The number of timeseries snapshots.
+    - The dimensions of the first snapshot in terms of n_y, n_z, and n_v.
+    - The labels associated with the timeseries.
+    - A preview of the first 5 rows and first 3 columns of the first snapshot.
+    """
+    print(f"The data looks as follows:")
+    timeseries = data['timeseries']
+    labels = data['labels']
+    
+    print("N =", len(timeseries))
+    
+    first_snapshot = timeseries[0]
+    n_x_y, n_v = first_snapshot.shape
+    n_y = n_z = np.sqrt(n_x_y)
+    
+    print(f"n_y = {n_y}, n_z = {n_z}, n_v = {n_v}")
+    print("Labels:")
+    print(labels)
+    print(first_snapshot[0:5, 0:3])
