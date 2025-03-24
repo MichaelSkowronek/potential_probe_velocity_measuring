@@ -4,6 +4,7 @@
 
 
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 class ClosestMatchFound(Exception):
@@ -143,7 +144,7 @@ def _extract_time_series_values_of_one_column_index(
     return extracted_values
 
 
-def extract_time_series_values(
+def extract_time_series_values_by_column_indices(
         time_series_arrays: list[np.ndarray],
         column_indices: int | list[int] | np.ndarray,
         row_index: int,
@@ -223,6 +224,62 @@ def extract_time_series_values(
     return extracted_values
 
 
+def extract_time_series_values(
+        data: dict,
+        column_labels: str | list[str],
+        row_index: int,
+        *,
+        dtype=None,
+    ) -> np.ndarray:
+    """
+    Wrapper for 'extract_time_series_values_by_column_indices' that uses column labels instead of indices.
+
+    This function accepts a dictionary containing time series arrays and their corresponding
+    column labels, allowing extraction of values using one or more column labels.
+
+    Args:
+        data (dict): Dictionary with two keys:
+            - "timeseries" (list[np.ndarray]): List of NumPy arrays representing time series data.
+            - "labels" (list[str]): List of column labels corresponding to the columns in the arrays.
+        column_labels (str or list[str]): The label(s) of the columns to extract values from. Can be a single label or a list of labels.
+        row_index (int): The row index from which to extract values.
+        dtype (data-type, optional): Desired data type for the output array. If None,
+                                     infers dtype from the input arrays.
+
+    Returns:
+        np.ndarray: A 1D NumPy array if one label is provided as a string. Otherwise,
+                    for multiple labels, returns a 2D NumPy array. Each row corresponds
+                    to one time series, and each column corresponds to a value from `column_labels`.
+
+    Raises:
+        KeyError: If any label in 'column_labels' is not found in 'data["labels"]'.
+        IndexError: If the provided row index is out of bounds for any of the arrays.
+    """
+    
+    # Ensure both keys are present in the dictionary
+    if "timeseries" not in data or "labels" not in data:
+        raise ValueError("The 'data' dictionary must contain 'timeseries' and 'labels' keys.")
+    
+    # Normalize `column_labels` to always be a list
+    if isinstance(column_labels, str):
+        column_labels = [column_labels]
+    
+    # Find indices corresponding to all provided column labels
+    try:
+        column_indices = [data["labels"].index(label) for label in column_labels]
+    except ValueError as e:
+        missing_label = next(label for label in column_labels if label not in data["labels"])
+        raise KeyError(f"The label '{missing_label}' was not found in 'data['labels']'.") from e
+    
+    # Call original function using extracted indices and timeseries
+    return extract_time_series_values_by_column_indices(
+                time_series_arrays=data["timeseries"],
+                column_indices=column_indices,
+                row_index=row_index,
+                dtype=dtype
+            )
+
+
 def extract_timeseries_data_by_coordinates_and_column(
         arrays,
         column_indices,
@@ -281,10 +338,106 @@ def extract_timeseries_data_by_coordinates_and_column(
     if row_index is None:
         return None
 
-    # Use updated extract_time_series_values function to handle single/multiple columns flexibly
-    return extract_time_series_values(
+    # Use updated extract_time_series_values_by_column_indices function to handle single/multiple columns flexibly
+    return extract_time_series_values_by_column_indices(
         time_series_arrays=arrays,
         column_indices=column_indices,
         row_index=row_index,
         dtype=dtype,
     )
+
+
+def extract_timeseries_data_by_coordinates(
+        data,
+        column_labels,
+        y_coord,
+        z_coord,
+        *,
+        return_closest=False,
+        dtype=None,
+    ):
+    """
+    Extended wrapper for 'extract_timeseries_data_by_coordinates_and_column' function.
+    This function accepts a dictionary containing timeseries data and labels, 
+    and uses one or more column labels instead of column indices.
+
+    Args:
+        data (dict): Dictionary with two keys:
+            - "timeseries" (list of np.ndarray): List of numpy arrays (timeseries).
+            - "labels" (list[str]): List of column labels corresponding to the columns in the arrays.
+        column_labe (str or list[str]): The label(s) of the columns to extract data from. Can be a single label or a list of labels.
+        y_coord (float or int): The y-coordinate to filter by.
+        z_coord (float or int): The z-coordinate to filter by.
+        return_closest (bool, optional): If True, extracts data from the row with the closest matching 
+                                         coordinates if no exact match is found. Default is False.
+        dtype (data-type, optional): Desired data type for the output array. If None,
+                                     infers dtype from the input arrays.
+
+    Returns:
+        np.ndarray or None: A NumPy array containing the extracted data, or None
+                            if no matching row is found in any of the timeseries.
+
+    Raises:
+        KeyError: If any label in 'column_labels' is not found in 'data["labels"]'.
+    """
+    
+    # Ensure both keys are present in the dictionary
+    if "timeseries" not in data or "labels" not in data:
+        raise ValueError("The 'data' dictionary must contain 'timeseries' and 'labels' keys.")
+    
+    # Normalize column_labels to always be a list
+    if isinstance(column_labels, str):
+        column_labels = [column_labels]
+    
+    # Find indices corresponding to all provided column labels
+    try:
+        column_indices = [data["labels"].index(label) for label in column_labels]
+    except ValueError as e:
+        missing_label = next(label for label in column_labels if label not in data["labels"])
+        raise KeyError(f"The label '{missing_label}' was not found in 'data['labels']'.") from e
+    
+    # Call original function using extracted indices and timeseries
+    return extract_timeseries_data_by_coordinates_and_column(
+                arrays=data["timeseries"],
+                column_indices=column_indices,
+                y_coord=y_coord,
+                z_coord=z_coord,
+                return_closest=return_closest,
+                dtype=dtype
+            )
+
+
+def plot_timeseries(
+        data_list,
+        *,
+        labels=None,
+        xlabel='Time',
+        ylabel='Value',
+        linewidth=1,
+        y_limits=None,
+    ):
+    # Check if data_list is a single 1D array or list
+    if not isinstance(data_list, list):
+        data_list = [data_list]  # Wrap in a list if it's not already
+    
+    # Create an array for the x-axis (time)
+    time = np.arange(len(data_list[0]))  # Assuming all data series have the same length
+    
+    # Create a figure for plotting
+    plt.figure(figsize=(10, 5))
+    
+    # Plot each time series in the provided list
+    for i, data in enumerate(data_list):
+        label = labels[i] if labels is not None else f"Timeseries {i+1}"
+        plt.plot(time, data, linewidth=linewidth, label=label)
+    
+    plt.title('Multiple Timeseries')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    
+    if y_limits is not None:  # Set y-axis limits if provided
+        plt.ylim(y_limits)
+
+    plt.grid()
+    plt.legend()  # Show legend to identify different timeseries
+    plt.show()
