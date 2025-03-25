@@ -85,7 +85,7 @@ def find_matching_row_index_from_timeseries(
             raise ClosestMatchFound(closest_index, closest_y, closest_z, y_coord, z_coord)
 
 
-def _extract_time_series_of_one_column_and_row_index(
+def _extract_timeseries_of_one_column_and_row_index(
         time_series_arrays: list[np.ndarray],
         column_index: int,
         row_index: int,
@@ -144,7 +144,7 @@ def _extract_time_series_of_one_column_and_row_index(
     return extracted_values
 
 
-def extract_time_series_by_column_and_row_index(
+def extract_timeseries_by_column_and_row_index(
         time_series_arrays: list[np.ndarray],
         column_indices: int | list[int] | np.ndarray,
         row_index: int,
@@ -157,7 +157,7 @@ def extract_time_series_by_column_and_row_index(
     This function iterates through a list of NumPy arrays, each representing a time series,
     and retrieves the values located at the specified row index and multiple column indices.
     If only one column index is provided (either as an int or a single-element list),
-    it delegates to `_extract_time_series_of_one_column_and_row_index`.
+    it delegates to `_extract_timeseries_of_one_column_and_row_index`.
 
     Args:
         time_series_arrays (list of np.ndarray): A list of NumPy arrays, where each array
@@ -180,7 +180,7 @@ def extract_time_series_by_column_and_row_index(
     
     # Handle single-column case when passed as an integer
     if isinstance(column_indices, int):
-        return _extract_time_series_of_one_column_and_row_index(
+        return _extract_timeseries_of_one_column_and_row_index(
             time_series_arrays,
             column_indices,
             row_index,
@@ -189,7 +189,7 @@ def extract_time_series_by_column_and_row_index(
 
     # Handle single-column case when passed as a single-element list
     if isinstance(column_indices, (list, np.ndarray)) and len(column_indices) == 1:
-        extracted_values = _extract_time_series_of_one_column_and_row_index(
+        extracted_values = _extract_timeseries_of_one_column_and_row_index(
             time_series_arrays,
             column_indices[0],  # Extract the first (and only) element in the list
             row_index,
@@ -224,7 +224,7 @@ def extract_time_series_by_column_and_row_index(
     return extracted_values
 
 
-def extract_time_series_by_row_index(
+def extract_timeseries_by_row_index(
         data: dict,
         column_labels: str | list[str],
         row_index: int,
@@ -232,7 +232,7 @@ def extract_time_series_by_row_index(
         dtype=None,
     ) -> np.ndarray:
     """
-    Wrapper for 'extract_time_series_by_column_and_row_index' that uses column labels instead of indices.
+    Wrapper for 'extract_timeseries_by_column_and_row_index' that uses column labels instead of indices.
 
     This function accepts a dictionary containing time series arrays and their corresponding
     column labels, allowing extraction of values using one or more column labels.
@@ -272,7 +272,7 @@ def extract_time_series_by_row_index(
         raise KeyError(f"The label '{missing_label}' was not found in 'data['labels']'.") from e
     
     # Call original function using extracted indices and timeseries
-    return extract_time_series_by_column_and_row_index(
+    return extract_timeseries_by_column_and_row_index(
                 time_series_arrays=data["timeseries"],
                 column_indices=column_indices,
                 row_index=row_index,
@@ -338,8 +338,8 @@ def extract_timeseries_by_column_index(
     if row_index is None:
         return None
 
-    # Use updated extract_time_series_by_column_and_row_index function to handle single/multiple columns flexibly
-    return extract_time_series_by_column_and_row_index(
+    # Use updated extract_timeseries_by_column_and_row_index function to handle single/multiple columns flexibly
+    return extract_timeseries_by_column_and_row_index(
         time_series_arrays=arrays,
         column_indices=column_indices,
         row_index=row_index,
