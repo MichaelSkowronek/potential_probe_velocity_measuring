@@ -8,10 +8,14 @@ import numpy as np
 from pathlib import Path
 
 
-def parse_tecplot_slice_to_numpy_timeseries(file_path, *, dtype=float):
+def parse_tecplot_slice_to_numpy_timeseries(
+        file_path,
+        *,
+        dtype=float,
+        ):
     """
-    Parses a Tecplot slice file and returns a list of NumPy arrays,
-    where each array represents a snapshot in the timeseries.
+    Parses a Tecplot slice file and returns a 3D NumPy array,
+    where the first dimension represents time steps in the timeseries.
     """
     file_path = Path(file_path)
 
@@ -52,8 +56,14 @@ def parse_tecplot_slice_to_numpy_timeseries(file_path, *, dtype=float):
         # Append the last snapshot after reading all lines
         if current_snapshot:
             data_arrays.append(np.array(current_snapshot, dtype=dtype))
-    print(f"Data parsed from path: {file_path.resolve(strict=True)}")
-    return data_arrays, headers
+
+    # Ensure all snapshots have consistent shapes before stacking them into a single array.
+    try:
+        stacked_array = np.stack(data_arrays)
+        print(f"Data parsed from path: {file_path.resolve(strict=True)}")
+        return stacked_array, headers
+    except ValueError as e:
+        raise ValueError("Snapshots have inconsistent shapes and cannot be stacked into a single 3D array.") from e
 
 
 def print_loaded_data_example(data):
@@ -62,26 +72,45 @@ def print_loaded_data_example(data):
 
     Parameters:
     data (dict): A dictionary containing 'timeseries' and 'labels'.
-                 'timeseries' should be a list or array of snapshots,
+                 'timeseries' should be a 3D NumPy array of snapshots,
                  and 'labels' should be a list of corresponding labels.
 
     The function prints:
-    - The number of timeseries snapshots.
-    - The dimensions of the first snapshot in terms of n_y, n_z, and n_v.
+    - The number of timeseries snapshots (time steps).
+    - The dimensions of each snapshot in terms of n_y, n_z, and n_v.
     - The labels associated with the timeseries.
     - A preview of the first 5 rows and first 3 columns of the first snapshot.
     """
-    print(f"The data looks as follows:")
+    print("The data looks as follows:")
+    
+    # Extract timeseries and labels from the input dictionary
     timeseries = data['timeseries']
     labels = data['labels']
     
-    print("N =", len(timeseries))
+    # Number of time steps (snapshots)
+    num_snapshots = timeseries.shape[0]
     
-    first_snapshot = timeseries[0]
-    n_x_y, n_v = first_snapshot.shape
-    n_y = n_z = np.sqrt(n_x_y)
+    # Dimensions per snapshot: n_y * n_z grid points and n_v variables
+    n_x_y = timeseries.shape[1]  # Number of spatial grid points (n_y * n_z)
+    n_v = timeseries.shape[2]   # Number of variables per grid point
     
-    print(f"n_y = {n_y}, n_z = {n_z}, n_v = {n_v}")
+    # Assuming a square grid for simplicity; calculate n_y and n_z
+    n_y = int(np.sqrt(n_x_y))
+    if n_y * n_y != n_x_y:
+        raise ValueError("The number of spatial grid points is not a perfect square. Cannot infer square grid dimensions.")
+    
+    print(f"N (number of snapshots) = {num_snapshots}")
+    
+    print(f"n_y (grid height) = {n_y}, "
+          f"n_z (grid width) = {n_y}, "  # Assuming square grid so height equals width
+          f"n_v (number of variables) = {n_v}")
+    
     print("Labels:")
     print(labels)
-    print(first_snapshot[0:5, 0:3])
+    
+    # Preview: First snapshot, first 5 rows, first 3 columns
+    print("Preview of the first snapshot:")
+    
+    first_snapshot_preview = timeseries[0, :5, :3]
+    
+    print(first_snapshot_preview)
