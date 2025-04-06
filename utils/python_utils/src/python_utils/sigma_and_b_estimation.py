@@ -6,16 +6,13 @@
 import numpy as np
 
 
-from .time_series_extraction import extract_timeseries
-
-
 def calc_conductivity_with_z_at_site(
         partial_phi_data,
         partial_phi_label,
         current_data,
         current_label,
-        y_coord,
-        z_coord,
+        y_idx,
+        z_idx,
         *,
         print_statistics=False,
         ):
@@ -28,21 +25,21 @@ def calc_conductivity_with_z_at_site(
         partial_phi_label (_type_): _description_
         current_data (_type_): _description_
         current_label (_type_): _description_
-        y_coord (_type_): _description_
-        z_coord (_type_): _description_
+        y_idx (_type_): _description_
+        z_idx (_type_): _description_
     """
-    part_phi_z = extract_timeseries(
-        data=partial_phi_data,
-        column_labels=partial_phi_label,
-        y_coord=y_coord,
-        z_coord=z_coord,
-        )
-    j_z_center = extract_timeseries(
-        data=current_data,
-        column_labels=current_label,
-        y_coord=y_coord,
-        z_coord=z_coord,
-        )
+    part_phi_z = partial_phi_data['timeseries'][
+        :,
+        y_idx,
+        z_idx,
+        partial_phi_data['labels'].index(partial_phi_label),
+        ]
+    j_z_center = current_data['timeseries'][
+        :,
+        y_idx,
+        z_idx,
+        current_data['labels'].index(current_label),
+        ]
     sigma_est = np.divide(
         j_z_center,
         part_phi_z,
@@ -58,6 +55,3 @@ def calc_conductivity_with_z_at_site(
         print(f"median(conductivity estimate) = {median}")
 
     return sigma_est
-
-
-

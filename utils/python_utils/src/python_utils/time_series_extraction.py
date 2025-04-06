@@ -29,60 +29,63 @@ class ClosestMatchFound(Exception):
                          f"provided coordinates (y={provided_y}, z={provided_z})")
 
 
-def find_matching_row_index_from_timeseries(
-        arrays,
+def find_closest_coordinate_index(
+        coord_to_index_map,
         y_coord,
         z_coord,
         *,
         return_closest=False,
-        ):
+    ):
     """
-    Finds the row index in the first numpy array of a timeseries where the y and z coordinates match.
-    If no exact match is found, it either returns the index of the closest match or raises an exception, based on the 'return_closest' parameter.
+    Finds the indices (y_index, z_index) in a coordinate-to-index map where the y and z coordinates match.
+    If no exact match is found, it either returns the closest indices or raises an exception, based on the 'return_closest' parameter.
 
     Args:
-        arrays (list of np.ndarray): A list of numpy arrays (timeseries). Each array is expected to have at least two columns: y and z.
+        coord_to_index_map (dict): A dictionary mapping (y_coord, z_coord) tuples to (y_index, z_index) tuples.
         y_coord (float or int): The y-coordinate to filter by.
         z_coord (float or int): The z-coordinate to filter by.
-        return_closest (bool, optional): If True, returns the index of the closest match if no exact match is found. If False (default), raises ClosestMatchFound.
+        return_closest (bool, optional): If True, returns the indices of the closest match if no exact match is found. 
+                                         If False (default), raises ClosestMatchFound.
 
     Returns:
-        int or None: The row index of the matching row in the first array, or None if the array list or first array is empty.
-        int: if return_closest is True, and no exact match is found, the index of the closest match is returned.
+        tuple or None: The indices (y_index, z_index) of the matching row in the map, or None if the map is empty.
+                      If return_closest is True and no exact match is found, returns indices of closest match.
 
     Raises:
         ClosestMatchFound: If no exact match is found and return_closest is False.
     """
 
-    if not arrays:  # Check if the list is empty
+    if not coord_to_index_map:  # Check if the map is empty
         return None
 
-    first_array = arrays[0]
+    # Check for exact match
+    key = (y_coord, z_coord)
+    if key in coord_to_index_map:
+        return coord_to_index_map[key]
 
-    if first_array.size == 0 or first_array.shape[0] == 0:  # Check if the array is empty
-        return None
+    # Find closest matching row using Euclidean distance
+    all_coords = np.array(list(coord_to_index_map.keys()))  # Extract all keys as an array
+    y_values = all_coords[:, 0]
+    z_values = all_coords[:, 1]
 
-    y_values = first_array[:, 0]
-    z_values = first_array[:, 1]
+    euclidean_distance = np.sqrt((y_values - y_coord)**2 + (z_values - z_coord)**2)
+    
+    closest_key_idx_in_array = np.argmin(euclidean_distance)  # Get index within array
 
-    matching_indices = np.where((y_values == y_coord) & (z_values == z_coord))[0]
-
-    if matching_indices.size > 0:
-        return matching_indices[0]  # Return the index of the first matching row
+    closest_y, closest_z = all_coords[closest_key_idx_in_array]
+    
+    closest_key = (closest_y, closest_z)
+    
+    if return_closest:
+        return coord_to_index_map[closest_key]  # Return corresponding indices from map
     else:
-        # Find closest matching row
-        y_diff = np.abs(y_values - y_coord)
-        z_diff = np.abs(z_values - z_coord)
-        total_diff = y_diff + z_diff
-        closest_index = np.argmin(total_diff)
-        
-        closest_y = y_values[closest_index]
-        closest_z = z_values[closest_index]
-        
-        if return_closest:
-            return closest_index
-        else:
-            raise ClosestMatchFound(closest_index, closest_y, closest_z, y_coord, z_coord)
+        raise ClosestMatchFound(
+            coord_to_index_map[closest_key], 
+            closest_y,
+            closest_z,
+            y_coord,
+            z_coord
+        )
 
 
 def _extract_timeseries_of_one_column_and_row_index(
