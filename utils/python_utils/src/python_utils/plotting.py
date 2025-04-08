@@ -40,3 +40,31 @@ def plot_timeseries(
     plt.grid()
     plt.legend()  # Show legend to identify different timeseries
     plt.show()
+
+
+def plot_heatmap(
+    data,
+    *,
+    title='2D Heat Map',
+    x_label='X-axis',
+    y_label='Y-axis'
+):
+    """
+    Plots a 2D heatmap from a provided 2D NumPy array.
+
+    Parameters:
+        data (np.ndarray): A 2D NumPy array containing the data to be plotted.
+        title (str): Title of the heat map.
+        x_label (str): Label for the X-axis.
+        y_label (str): Label for the Y-axis.
+    """
+    plt.imshow(
+        data,
+        cmap='hot',
+        interpolation='nearest',
+        )
+    plt.colorbar()  # Show color scale
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.show()
