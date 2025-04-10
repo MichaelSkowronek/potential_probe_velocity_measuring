@@ -1,6 +1,6 @@
-# python_utils
+# ppvm_py
 
-Python utils package.
+Python package for potential_probe_velocity_measuring.
 
 ## Installation
 
