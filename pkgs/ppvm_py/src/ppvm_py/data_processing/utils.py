@@ -3,6 +3,7 @@
 
 import re
 from pathlib import Path
+import numpy as np
 
 
 def read_first_n_lines(
@@ -93,3 +94,47 @@ def count_pattern_in_file(
                 count += 1
                 
     return count
+
+
+def create_index_to_coord_map(coord_to_index_map):
+    """
+    Create a mapping from index to coordinate.
+
+    Args:
+        coord_to_index_map (dict): A dictionary mapping coordinates to indices.
+
+    Returns:
+        dict: A dictionary mapping index to coordinate.
+    """
+    
+    index_to_coord_map = {
+        idx: coord
+        for coord, idx in coord_to_index_map.items()
+    }
+    
+    return index_to_coord_map
+
+
+def generate_coord_nd(
+        shape,
+        index_to_coord_map,
+        coord_index,
+):
+    """
+    Generates an n-dimensional numpy array of coordinates from a dictionary mapping indices to coordinates.
+
+    Args:
+        shape (tuple): Shape of the n-dimensional array.
+        index_to_coord_map (dict): A dictionary mapping indices (as tuples) to their respective coordinates.
+        coord_index (int): The index of the coordinate to extract from each coordinate tuple.
+
+    Returns:
+        np.ndarray: An n-dimensional numpy array containing selected coordinate values for each point.
+    """
+    coord_nd = np.empty(shape)
+
+    # Populate the coord_nd matrix using the index-to-coordinate map
+    for idx, coords in index_to_coord_map.items():
+        coord_nd[idx] = coords[coord_index]
+
+    return coord_nd
