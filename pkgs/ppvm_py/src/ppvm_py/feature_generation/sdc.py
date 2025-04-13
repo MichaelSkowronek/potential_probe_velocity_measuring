@@ -18,70 +18,98 @@ def symmetric_difference_coefficient(
 
 
 def compute_symmetric_difference_coefficients(
-    points_3d,
+    points_nd,
     direction_axis,
-    coord_3d,
+    coord_nd,
 ):
     """
-    Computes symmetric difference coefficients for a 3D numpy array of points,
-    given the coordinate array.
+    Computes symmetric difference coefficients for an n-dimensional numpy array of points,
+    given the coordinate array. Works for both 3D and 4D input.
 
     Args:
-        points_3d (np.ndarray): A 3D numpy array of shape (x, y, z) containing point values.
-        direction_axis (int): The axis index (0 for x, 1 for y, 2 for z) along which to compute the coefficients.
-        coord_3d (np.ndarray): A 3D numpy array of the same shape as points_3d containing coordinate values.
+        points_nd (np.ndarray): An n-dimensional numpy array containing point values.
+                                 Shape can be (x, y, z) for a single sample or (batch, x, y, z) for a batch.
+        direction_axis (int): The axis index along which to compute the coefficients.
+                               If points_nd is 3D, axis can be 0, 1, or 2.
+                               If points_nd is 4D, axis can be 1, 2, or 3.
+        coord_nd (np.ndarray): An n-dimensional numpy array of the same shape as points_nd
+                                 containing coordinate values.
 
     Returns:
-        np.ndarray: A 3D numpy array containing symmetric difference coefficients.
+        np.ndarray: An n-dimensional numpy array containing symmetric difference coefficients.
     """
-    # Shift the matrix in positive and negative directions along the given axis
-    shifted_positive_points = np.roll(points_3d, -1, axis=direction_axis)
-    shifted_negative_points = np.roll(points_3d, 1, axis=direction_axis)
+    ndim = points_nd.ndim
+    if ndim not in [3, 4]:
+        raise ValueError("Input 'points_nd' must be a 3D or 4D array.")
 
-    shifted_positive_coords = np.roll(coord_3d, -1, axis=direction_axis)
-    shifted_negative_coords = np.roll(coord_3d, 1, axis=direction_axis)
+    if ndim == 3:
+        if not 0 <= direction_axis <= 2:
+            raise ValueError("For a 3D array, direction_axis must be 0, 1, or 2.")
+    else:  # ndim == 4
+        if not 1 <= direction_axis <= 3:
+            raise ValueError("For a 4D array, direction_axis must be 1, 2, or 3.")
 
-    # Compute delta_f by subtracting matrices of points
+    shifted_positive_points = np.roll(points_nd, -1, axis=direction_axis)
+    shifted_negative_points = np.roll(points_nd, 1, axis=direction_axis)
+
+    shifted_positive_coords = np.roll(coord_nd, -1, axis=direction_axis)
+    shifted_negative_coords = np.roll(coord_nd, 1, axis=direction_axis)
+
     delta_f = shifted_positive_points - shifted_negative_points
-
-    # Compute delta_l by subtracting matrices of coordinates
     delta_l = np.abs(shifted_positive_coords - shifted_negative_coords)
 
-    # Compute symmetric difference coefficient without masking or error handling
     sdc_array = delta_f / delta_l
-
     return sdc_array
 
 
 def compute_symmetric_difference_coefficients_with_index_to_coord_map(
-    points_3d,
+    points_nd,
     direction_axis,
     index_to_coord_map,
 ):
     """
-    Computes symmetric difference coefficients for a 3D numpy array of points.
+    Computes symmetric difference coefficients for an n-dimensional numpy array of points,
+    using an index-to-coordinate map. Works for both 3D and 4D input.
 
     Args:
-        points_3d (np.ndarray): A 3D numpy array of shape (x, y, z) containing point values.
-        direction_axis (int): The axis index (0 for x, 1 for y, 2 for z) along which to compute the coefficients.
-        index_to_coord_map (dict): A dictionary mapping indices (x, y, z) to their respective coordinates.
+        points_nd (np.ndarray): An n-dimensional numpy array containing point values.
+                                 Shape can be (x, y, z) for a single sample or (batch, x, y, z) for a batch.
+        direction_axis (int): The axis index along which to compute the coefficients.
+                               If points_nd is 3D, axis can be 0, 1, or 2.
+                               If points_nd is 4D, axis can be 1, 2, or 3.
+        index_to_coord_map (dict): A dictionary mapping indices (as tuples) to their respective
+                                     coordinates.
 
     Returns:
-        np.ndarray: A 3D numpy array containing symmetric difference coefficients.
+        np.ndarray: An n-dimensional numpy array containing symmetric difference coefficients.
     """
+    ndim = points_nd.ndim
+    if ndim not in [3, 4]:
+        raise ValueError("Input 'points_nd' must be a 3D or 4D array.")
 
-    # Generate the coordinate matrix using the helper function
-    coord_3d = generate_coord_nd(
-        points_3d.shape,
-        index_to_coord_map,
-        coord_index=direction_axis,
-    )
+    if ndim == 3:
+        if not 0 <= direction_axis <= 2:
+            raise ValueError("For a 3D array, direction_axis must be 0, 1, or 2.")
+        shape = points_nd.shape
+        coord_nd = generate_coord_nd(
+            shape,
+            index_to_coord_map,
+            coord_index=direction_axis,
+        )
+    else:  # ndim == 4
+        if not 1 <= direction_axis <= 3:
+            raise ValueError("For a 4D array, direction_axis must be 1, 2, or 3.")
+        sample_shape = points_nd.shape[1:]
+        coord_3d_sample = generate_coord_nd(
+            sample_shape,
+            index_to_coord_map,
+            coord_index=direction_axis - 1,  # Adjust for 3D map
+        )
+        coord_nd = np.repeat(coord_3d_sample[np.newaxis, ...], points_nd.shape[0], axis=0)
 
-    # Call the now public function with the generated coordinate array
     sdc_array = compute_symmetric_difference_coefficients(
-        points_3d,
+        points_nd,
         direction_axis,
-        coord_3d,
+        coord_nd,
     )
-
     return sdc_array

@@ -116,9 +116,9 @@ def create_index_to_coord_map(coord_to_index_map):
 
 
 def generate_coord_nd(
-        shape,
-        index_to_coord_map,
-        coord_index,
+    shape,
+    index_to_coord_map,
+    coord_index,
 ):
     """
     Generates an n-dimensional numpy array of coordinates from a dictionary mapping indices to coordinates.
@@ -132,9 +132,12 @@ def generate_coord_nd(
         np.ndarray: An n-dimensional numpy array containing selected coordinate values for each point.
     """
     coord_nd = np.empty(shape)
-
-    # Populate the coord_nd matrix using the index-to-coordinate map
-    for idx, coords in index_to_coord_map.items():
-        coord_nd[idx] = coords[coord_index]
-
+    it = np.nditer(coord_nd, flags=['multi_index'])
+    while not it.finished:
+        idx = tuple(it.multi_index)
+        if idx in index_to_coord_map:
+            coord_nd[idx] = index_to_coord_map[idx][coord_index]
+        else:
+            raise KeyError(f"Index {idx} not found in index_to_coord_map.")
+        it.iternext()
     return coord_nd
