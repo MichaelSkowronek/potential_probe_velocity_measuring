@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from pathlib import Path
+from typing import Optional
 
 
 def plot_timeseries(
@@ -131,38 +132,56 @@ def plot_heatmap(
 
 
 def generate_2d_video(
-    data,
+    data: np.ndarray,
     *,
-    output_file_path="animations/2d_video.gif",
-    fps=10,
-    colormap='viridis',
-    xlabel="X Axis",
-    ylabel="Y Axis",
-    title_pattern="Timestep: {}"
+    output_file_path: str | Path = "animations/2d_video.gif",
+    fps: int = 10,
+    colormap: Optional[str] = None,
+    xlabel: str = "X Axis",
+    ylabel: str = "Y Axis",
+    title_pattern: str = "Timestep: {}",
+    writer: Optional[str] = 'pillow',
 ):
     """
     Generates a 2D video (GIF) from 3D data and saves it to a file.
+    The colorbar range is determined by the global min and max of the entire dataset.
+    The animation writer can be optionally specified.
 
     Args:
         data (numpy.ndarray): 3D numpy array of shape (num_timesteps, y_size, x_size).
-                             Each slice along the first dimension represents a 2D frame
-                             at a specific timestep.
+                              Each slice along the first dimension represents a 2D frame
+                              at a specific timestep.
         output_file_path (str or pathlib.Path): The path to the output video file
-                                                 (default: "2d_video.gif"). Will be
-                                                 converted to a pathlib.Path object.
+                                                 (default: "animations/2d_video.gif").
+                                                 Will be converted to a pathlib.Path object.
         fps (int): Frames per second of the output video (default: 10).
-        colormap (str): Matplotlib colormap to use for visualizing the 2D data
-                        (default: 'viridis'). See matplotlib.cm for options.
+        colormap (str, optional, keyword-only): Matplotlib colormap to use for visualizing the 2D data
+                                                (default: None). See matplotlib.cm for options.
         xlabel (str): Label for the x-axis (default: "X Axis").
         ylabel (str): Label for the y-axis (default: "Y Axis").
         title_pattern (str, keyword-only): A format string for the title of each frame
-                                            (default: "Timestep: {}"). Use '{}' to
-                                            insert the timestep number.
+                                         (default: "Timestep: {}"). Use '{}' to
+                                         insert the timestep number.
+        writer (str, optional, keyword-only): The writer to use for saving the animation
+                                              (default: 'pillow'). If None, Matplotlib's
+                                              default writer will be used. See
+                                              matplotlib.animation.Animation.save for options.
     """
     num_timesteps, _, _ = data.shape
+    output_path = Path(output_file_path)
+
+    # Determine the global minimum and maximum values in the entire dataset
+    vmin = np.min(data)
+    vmax = np.max(data)
 
     fig, ax = plt.subplots()
-    img = ax.imshow(data[0], cmap=colormap, animated=True)
+    img = ax.imshow(
+        data[0],
+        cmap=colormap,
+        animated=True,
+        vmin=vmin,
+        vmax=vmax,
+    )
     _ = fig.colorbar(img)  # Add a colorbar
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -174,11 +193,13 @@ def generate_2d_video(
 
     ani = animation.FuncAnimation(fig, update, frames=num_timesteps, interval=1000/fps, blit=True)
 
-    output_path = Path(output_file_path)
+    save_kwargs = {'fps': fps}
+    if writer is not None:
+        save_kwargs['writer'] = writer
+
     ani.save(
-        str(output_path),
-        writer='pillow',
-        fps=fps,
-        )
+        output_path,
+        **save_kwargs,
+    )
     plt.close(fig)  # Close the figure to prevent it from being displayed in the notebook
-    print(f"Video saved to {output_path.resolve(strict=True)}")
+    print(f"Video saved to\n{output_path.resolve(strict=True)}")

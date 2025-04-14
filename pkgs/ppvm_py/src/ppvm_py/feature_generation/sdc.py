@@ -26,6 +26,8 @@ def compute_symmetric_difference_coefficients(
     Computes symmetric difference coefficients for an n-dimensional numpy array of points,
     given the coordinate array. Works for both 3D and 4D input.
 
+    Note: Periodic boundary conditions are assumed to calculate the sdc at the boundaries.
+
     Args:
         points_nd (np.ndarray): An n-dimensional numpy array containing point values.
                                  Shape can be (x, y, z) for a single sample or (batch, x, y, z) for a batch.
