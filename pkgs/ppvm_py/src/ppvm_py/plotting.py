@@ -55,6 +55,8 @@ def plot_heatmap(
     index_to_space_dict=None,
     round_decimals=None,
     max_ticks=None,
+    vmin=None,  # Minimum value for colormap scaling
+    vmax=None,  # Maximum value for colormap scaling
 ):
     """
     Plots a 2D heatmap from a provided 2D NumPy array.
@@ -73,6 +75,8 @@ def plot_heatmap(
         max_ticks (int or None): Maximum number of ticks to display on each axis. 
                                  If None, all unique ticks are displayed.
                                  Includes zero if it's within range.
+        vmin (float or None): Minimum value for colormap scaling. If None, it's determined automatically.
+        vmax (float or None): Maximum value for colormap scaling. If None, it's determined automatically.
     """
     
     if index_to_space_dict is not None:
@@ -116,11 +120,13 @@ def plot_heatmap(
             plt.xticks(ticks=np.arange(len(x_positions)), labels=x_positions)
             plt.yticks(ticks=np.arange(len(y_positions)), labels=y_positions)
 
-    # Plot heatmap
+    # Plot heatmap with specified color limits
     plt.imshow(
         data,
         cmap='hot',
-        interpolation='nearest'
+        interpolation='nearest',
+        vmin=vmin,
+        vmax=vmax,
     )
     
     plt.colorbar()  
@@ -141,40 +147,33 @@ def generate_2d_video(
     ylabel: str = "Y Axis",
     title_pattern: str = "Timestep: {}",
     writer: Optional[str] = 'pillow',
+    vmin: Optional[float] = None,  # New argument for minimum value
+    vmax: Optional[float] = None,  # New argument for maximum value
 ):
     """
     Generates a 2D video (GIF) from 3D data and saves it to a file.
-    The colorbar range is determined by the global min and max of the entire dataset.
-    The animation writer can be optionally specified.
-
+    
     Args:
-        data (numpy.ndarray): 3D numpy array of shape (num_timesteps, y_size, x_size).
-                              Each slice along the first dimension represents a 2D frame
-                              at a specific timestep.
-        output_file_path (str or pathlib.Path): The path to the output video file
-                                                 (default: "animations/2d_video.gif").
-                                                 Will be converted to a pathlib.Path object.
-        fps (int): Frames per second of the output video (default: 10).
-        colormap (str, optional, keyword-only): Matplotlib colormap to use for visualizing the 2D data
-                                                (default: None). See matplotlib.cm for options.
-        xlabel (str): Label for the x-axis (default: "X Axis").
-        ylabel (str): Label for the y-axis (default: "Y Axis").
-        title_pattern (str, keyword-only): A format string for the title of each frame
-                                         (default: "Timestep: {}"). Use '{}' to
-                                         insert the timestep number.
-        writer (str, optional, keyword-only): The writer to use for saving the animation
-                                              (default: 'pillow'). If None, Matplotlib's
-                                              default writer will be used. See
-                                              matplotlib.animation.Animation.save for options.
+        ...
+        vmin (float, optional): Minimum value for color normalization (default: None).
+                                If None, calculated from the dataset.
+        vmax (float, optional): Maximum value for color normalization (default: None).
+                                If None, calculated from the dataset.
+        ...
     """
+    
     num_timesteps, _, _ = data.shape
     output_path = Path(output_file_path)
 
-    # Determine the global minimum and maximum values in the entire dataset
-    vmin = np.min(data)
-    vmax = np.max(data)
+    # Determine the global minimum and maximum values in the entire dataset if not provided
+    if vmin is None:
+        vmin = np.min(data)
+        
+    if vmax is None:
+        vmax = np.max(data)
 
     fig, ax = plt.subplots()
+    
     img = ax.imshow(
         data[0],
         cmap=colormap,
@@ -182,6 +181,7 @@ def generate_2d_video(
         vmin=vmin,
         vmax=vmax,
     )
+    
     _ = fig.colorbar(img)  # Add a colorbar
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -194,6 +194,7 @@ def generate_2d_video(
     ani = animation.FuncAnimation(fig, update, frames=num_timesteps, interval=1000/fps, blit=True)
 
     save_kwargs = {'fps': fps}
+    
     if writer is not None:
         save_kwargs['writer'] = writer
 
@@ -201,5 +202,6 @@ def generate_2d_video(
         output_path,
         **save_kwargs,
     )
+    
     plt.close(fig)  # Close the figure to prevent it from being displayed in the notebook
     print(f"Video saved to\n{output_path.resolve(strict=True)}")
