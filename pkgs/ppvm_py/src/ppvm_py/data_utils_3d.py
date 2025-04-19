@@ -101,3 +101,27 @@ def find_closest_coordinate_index(
             y_coord,
             z_coord
         )
+
+
+def apply_3d_timeseries_indexing_tuple_on_1d_timeseries(data, indexing_tuple, original_shape):
+    """
+    Applies a 3D timeseries indexing tuple to a flattened 1D timeseries array.
+    
+    Parameters:
+        data (numpy.ndarray): Flattened input array of shape (n_timesteps, n_x * n_y * n_z).
+        indexing_tuple (tuple): Indexing tuple defining slices for exclusion in the unflattened shape.
+        original_shape (tuple): Original shape of the data before flattening (n_timesteps, n_x, n_y, n_z).
+        
+    Returns:
+        numpy.ndarray: Data with exclusions applied and returned in its original flattened shape.
+    """
+    # Reshape the data to its original multi-dimensional form
+    reshaped_data = data.reshape(original_shape)
+    
+    # Apply slicing using the indexing tuple
+    sliced_data = reshaped_data[indexing_tuple]
+    
+    # Reshape back to flattened form
+    sliced_flattened_data = sliced_data.reshape(data.shape[0], -1)
+    
+    return sliced_flattened_data
