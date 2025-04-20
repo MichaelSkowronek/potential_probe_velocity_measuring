@@ -21,12 +21,12 @@ def compute_symmetric_difference_coefficients(
     points_nd,
     direction_axis,
     coord_nd,
+    *,
+    periodic_boundary_in_direction_axis=False,
 ):
     """
     Computes symmetric difference coefficients for an n-dimensional numpy array of points,
     given the coordinate array. Works for both 3D and 4D input.
-
-    Note: Periodic boundary conditions are assumed to calculate the sdc at the boundaries.
 
     Args:
         points_nd (np.ndarray): An n-dimensional numpy array containing point values.
@@ -36,9 +36,14 @@ def compute_symmetric_difference_coefficients(
                                If points_nd is 4D, axis can be 1, 2, or 3.
         coord_nd (np.ndarray): An n-dimensional numpy array of the same shape as points_nd
                                  containing coordinate values.
+        periodic_boundary_in_direction_axis (bool): Whether periodic boundary conditions
+                                                     are assumed along the direction axis.
+                                                     Defaults to False.
 
     Returns:
         np.ndarray: An n-dimensional numpy array containing symmetric difference coefficients.
+                    If periodic_boundary_in_direction_axis is False, the returned array
+                    will have a reduced size along the direction axis, excluding the boundaries.
     """
     ndim = points_nd.ndim
     if ndim not in [3, 4]:
@@ -51,16 +56,32 @@ def compute_symmetric_difference_coefficients(
         if not 1 <= direction_axis <= 3:
             raise ValueError("For a 4D array, direction_axis must be 1, 2, or 3.")
 
-    shifted_positive_points = np.roll(points_nd, -1, axis=direction_axis)
-    shifted_negative_points = np.roll(points_nd, 1, axis=direction_axis)
+    if periodic_boundary_in_direction_axis:
+        shifted_positive_points = np.roll(points_nd, -1, axis=direction_axis)
+        shifted_negative_points = np.roll(points_nd, 1, axis=direction_axis)
 
-    shifted_positive_coords = np.roll(coord_nd, -1, axis=direction_axis)
-    shifted_negative_coords = np.roll(coord_nd, 1, axis=direction_axis)
+        shifted_positive_coords = np.roll(coord_nd, -1, axis=direction_axis)
+        shifted_negative_coords = np.roll(coord_nd, 1, axis=direction_axis)
 
-    delta_f = shifted_positive_points - shifted_negative_points
-    delta_l = np.abs(shifted_positive_coords - shifted_negative_coords)
+        delta_f = shifted_positive_points - shifted_negative_points
+        delta_l = np.abs(shifted_positive_coords - shifted_negative_coords)
+        sdc_array = delta_f / delta_l
 
-    sdc_array = delta_f / delta_l
+    else:
+        slices = [slice(None)] * ndim
+        slices[direction_axis] = slice(1, -1)
+        valid_indices = tuple(slices)
+
+        shifted_positive_points = np.roll(points_nd, -1, axis=direction_axis)[valid_indices]
+        shifted_negative_points = np.roll(points_nd, 1, axis=direction_axis)[valid_indices]
+
+        shifted_positive_coords = np.roll(coord_nd, -1, axis=direction_axis)[valid_indices]
+        shifted_negative_coords = np.roll(coord_nd, 1, axis=direction_axis)[valid_indices]
+
+        delta_f = shifted_positive_points - shifted_negative_points
+        delta_l = np.abs(shifted_positive_coords - shifted_negative_coords)
+        sdc_array = delta_f / delta_l
+
     return sdc_array
 
 
@@ -68,6 +89,8 @@ def compute_symmetric_difference_coefficients_with_index_to_coord_map(
     points_nd,
     direction_axis,
     index_to_coord_map,
+    *,
+    periodic_boundary_in_direction_axis=False,
 ):
     """
     Computes symmetric difference coefficients for an n-dimensional numpy array of points,
@@ -81,9 +104,14 @@ def compute_symmetric_difference_coefficients_with_index_to_coord_map(
                                If points_nd is 4D, axis can be 1, 2, or 3.
         index_to_coord_map (dict): A dictionary mapping indices (as tuples) to their respective
                                      coordinates.
+        periodic_boundary_in_direction_axis (bool): Whether periodic boundary conditions
+                                                     are assumed along the direction axis.
+                                                     Defaults to False.
 
     Returns:
         np.ndarray: An n-dimensional numpy array containing symmetric difference coefficients.
+                    If periodic_boundary_in_direction_axis is False, the returned array
+                    will have a reduced size along the direction axis, excluding the boundaries.
     """
     ndim = points_nd.ndim
     if ndim not in [3, 4]:
@@ -113,5 +141,6 @@ def compute_symmetric_difference_coefficients_with_index_to_coord_map(
         points_nd,
         direction_axis,
         coord_nd,
+        periodic_boundary_in_direction_axis=periodic_boundary_in_direction_axis,
     )
     return sdc_array
