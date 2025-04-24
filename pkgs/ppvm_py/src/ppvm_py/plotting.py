@@ -205,3 +205,12 @@ def generate_2d_video(
     
     plt.close(fig)  # Close the figure to prevent it from being displayed in the notebook
     print(f"Video saved to\n{output_path.resolve(strict=True)}")
+
+
+def plot_histogram(data):
+    plt.hist(data, bins='auto', alpha=0.7, color='blue')
+    plt.title('Histogram of Values')
+    plt.xlabel('Value')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.show()
