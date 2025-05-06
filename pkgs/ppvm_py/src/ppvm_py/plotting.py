@@ -14,35 +14,66 @@ def plot_timeseries(
         data_list,
         *,
         labels=None,
+        title='Multiple Timeseries',
         xlabel='Time',
         ylabel='Value',
         linewidth=1,
         y_limits=None,
     ):
-    # Check if data_list is a single 1D array or list
+    """
+    Plot one or multiple time series data on a single figure.
+
+    Parameters
+    ----------
+    data_list : array-like or list of array-like
+        A single time series (1D array-like) or a list of time series of equal length.
+    labels : list of str, optional
+        List of labels for each time series. If None, default labels are generated.
+    title : str, optional
+        Title of the plot. Default is 'Multiple Timeseries'.
+    xlabel : str, optional
+        Label for the x-axis. Default is 'Time'.
+    ylabel : str, optional
+        Label for the y-axis. Default is 'Value'.
+    linewidth : float, optional
+        Line width for the plot lines. Default is 1.
+    y_limits : tuple of float, optional
+        Limits for the y-axis as (ymin, ymax). If None, determined automatically.
+
+    Returns
+    -------
+    None
+        Displays the time series plot using matplotlib.
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # Wrap single series in a list for uniform processing
     if not isinstance(data_list, list):
-        data_list = [data_list]  # Wrap in a list if it's not already
-    
-    # Create an array for the x-axis (time)
-    time = np.arange(len(data_list[0]))  # Assuming all data series have the same length
-    
-    # Create a figure for plotting
+        data_list = [data_list]
+
+    # Create an x-axis based on the length of the first series
+    time = np.arange(len(data_list[0]))
+
+    # Initialize the figure
     plt.figure(figsize=(10, 5))
-    
-    # Plot each time series in the provided list
+
+    # Plot each series
     for i, data in enumerate(data_list):
         label = labels[i] if labels is not None else f"Timeseries {i+1}"
         plt.plot(time, data, linewidth=linewidth, label=label)
-    
-    plt.title('Multiple Timeseries')
+
+    # Set plot title and labels
+    plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    
-    if y_limits is not None:  # Set y-axis limits if provided
+
+    # Apply y-axis limits if provided
+    if y_limits is not None:
         plt.ylim(y_limits)
 
     plt.grid()
-    plt.legend()  # Show legend to identify different timeseries
+    plt.legend()
     plt.show()
 
 
